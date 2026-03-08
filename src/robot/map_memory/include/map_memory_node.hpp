@@ -1,8 +1,6 @@
 #ifndef MAP_MEMORY_NODE_HPP_
 #define MAP_MEMORY_NODE_HPP_
 
-#include "geometry_msgs/msg/pose.hpp"
-#include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -27,11 +25,6 @@ private:
 
   // Timer-based map update
   void updateMap();
-
-  std::string frame_id_ = "sim_world";
-  double resolution_ = 0.1;
-  int width_ = 200;
-  int height_ = 200;
 
   // Robot state tracking
   double last_x_ = 0.0;

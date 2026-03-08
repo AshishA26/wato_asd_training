@@ -1,3 +1,12 @@
-# map_memory_node:
-#   ros__parameters:
-    
+map_memory_node:
+  ros__parameters:
+    resolution: 0.1
+    width: 200
+    height: 200
+    distance_threshold: 1.5
+    default_cell_value: -1
+
+    costmap_topic: "/costmap"
+    odom_topic: "/odom/filtered"
+    map_topic: "/map"
+    frame_id: "sim_world"

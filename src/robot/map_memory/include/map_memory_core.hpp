@@ -1,12 +1,12 @@
 #ifndef MAP_MEMORY_CORE_HPP_
 #define MAP_MEMORY_CORE_HPP_
 
-#include "geometry_msgs/msg/pose.hpp"
+// #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
+// #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+// #include "tf2_ros/buffer.h"
+// #include "tf2_ros/transform_listener.h"
 #include <cstdint>
 #include <vector>
 
@@ -28,7 +28,7 @@ public:
   // Initialize the global map
   void initializeGlobalMap(const std::string &frame_id, double resolution,
                            int width, int height, double origin_x,
-                           double origin_y);
+                           double origin_y, int8_t default_cell_value);
 
   // Integrate a costmap into the global map
   void integrateCostmap(const nav_msgs::msg::OccupancyGrid::SharedPtr costmap,
@@ -39,6 +39,7 @@ public:
 private:
   rclcpp::Logger logger_;
   nav_msgs::msg::OccupancyGrid::SharedPtr global_map_;
+  int8_t default_cell_value_; // Default value for unknown cells
 
   // TF2 components
   // std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
