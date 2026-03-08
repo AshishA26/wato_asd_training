@@ -1,10 +1,11 @@
 map_memory_node:
   ros__parameters:
     resolution: 0.1
-    width: 200
-    height: 200
+    width: 1000
+    height: 1000
     distance_threshold: 1.5
-    default_cell_value: -1
+    cell_threshold: 40
+    unknown_cell_value: -1
 
     costmap_topic: "/costmap"
     odom_topic: "/odom/filtered"

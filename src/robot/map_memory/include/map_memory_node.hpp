@@ -29,8 +29,8 @@ private:
   // Robot state tracking
   double last_x_ = 0.0;
   double last_y_ = 0.0;
-  robot::RobotTransform robot_transform_;
-  const double distance_threshold_ = 1.5;
+  robot::RobotTransform robot_world_transform_;
+  double distance_threshold_;
 
   // Flags to track if we have received data
   bool costmap_updated_ = false;

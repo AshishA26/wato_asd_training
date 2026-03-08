@@ -1,9 +1,9 @@
 costmap:
   ros__parameters:
     resolution: 0.1
-    width: 200
-    height: 200
-    inflation_radius: 1.0
+    width: 1000
+    height: 1000
+    inflation_radius: 2.0
     default_cell_value: 0
     max_cost_inflated_cell: 100
     cost_occupied: 100

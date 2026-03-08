@@ -7,9 +7,9 @@ CostmapNode::CostmapNode()
     : Node("costmap"), costmap_(robot::CostmapCore(this->get_logger())) {
   // Declare parameters with default values
   resolution_ = this->declare_parameter("resolution", 0.1);
-  width_ = this->declare_parameter("width", 200);
-  height_ = this->declare_parameter("height", 200);
-  inflation_radius_ = this->declare_parameter("inflation_radius", 1.0);
+  width_ = this->declare_parameter("width", 1000);
+  height_ = this->declare_parameter("height", 1000);
+  inflation_radius_ = this->declare_parameter("inflation_radius", 2.0);
   default_cell_value_ =
       static_cast<int8_t>(this->declare_parameter("default_cell_value", 0));
   max_cost_inflated_cell_ = static_cast<int8_t>(
