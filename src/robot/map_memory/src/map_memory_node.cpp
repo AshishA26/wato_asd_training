@@ -42,13 +42,14 @@ MapMemoryNode::MapMemoryNode()
 }
 
 void MapMemoryNode::costmapCallback(
-    const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
+    const nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg) {
   // Store the latest costmap
   latest_costmap_ = msg;
   costmap_updated_ = true;
 }
 
-void MapMemoryNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
+void MapMemoryNode::odomCallback(
+    const nav_msgs::msg::Odometry::ConstSharedPtr msg) {
   double x = msg->pose.pose.position.x;
   double y = msg->pose.pose.position.y;
 
@@ -84,13 +85,19 @@ void MapMemoryNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
 void MapMemoryNode::updateMap() {
   if (should_update_map_ && costmap_updated_) {
 
+    // Integrate the latest costmap into the global map
     map_memory_.integrateCostmap(latest_costmap_, robot_world_transform_);
 
+    // Get the updated global map
     nav_msgs::msg::OccupancyGrid::SharedPtr global_map =
         map_memory_.getGlobalMap();
-    global_map->header.stamp = this->get_clock()->now();
 
-    map_pub_->publish(*global_map);
+    // Copy and update the header for publishing
+    nav_msgs::msg::OccupancyGrid map_to_publish = *global_map;
+    map_to_publish.header.stamp = this->get_clock()->now();
+
+    // Publish the updated global map
+    map_pub_->publish(map_to_publish);
     should_update_map_ = false;
   }
 }

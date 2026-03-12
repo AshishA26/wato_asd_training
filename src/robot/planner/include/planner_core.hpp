@@ -1,6 +1,10 @@
 #ifndef PLANNER_CORE_HPP_
 #define PLANNER_CORE_HPP_
 
+#include "geometry_msgs/msg/point_stamped.hpp"
+#include "geometry_msgs/msg/pose.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace robot {
@@ -50,8 +54,17 @@ class PlannerCore {
 public:
   explicit PlannerCore(const rclcpp::Logger &logger);
 
+  // Main function to plan a path using A* algorithm
+  void planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
+                const geometry_msgs::msg::Pose::SharedPtr &robot_pose,
+                const geometry_msgs::msg::PointStamped::SharedPtr &goal);
+
+  // Function to retrieve the planned path
+  nav_msgs::msg::Path::SharedPtr getPath() const;
+
 private:
   rclcpp::Logger logger_;
+  nav_msgs::msg::Path::SharedPtr path_;
 };
 
 } // namespace robot

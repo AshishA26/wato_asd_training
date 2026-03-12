@@ -32,7 +32,7 @@ PlannerNode::PlannerNode()
 
 void PlannerNode::mapCallback(
     const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
-  current_map_ = *msg;
+  current_map_ = msg;
   if (state_ == State::WAITING_FOR_ROBOT_TO_REACH_GOAL) {
     planPath();
   }
@@ -40,14 +40,14 @@ void PlannerNode::mapCallback(
 
 void PlannerNode::goalCallback(
     const geometry_msgs::msg::PointStamped::SharedPtr msg) {
-  goal_ = *msg;
+  goal_ = msg;
   goal_received_ = true;
   state_ = State::WAITING_FOR_ROBOT_TO_REACH_GOAL;
   planPath();
 }
 
 void PlannerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
-  robot_pose_ = msg->pose.pose;
+  robot_pose_ = std::make_shared<geometry_msgs::msg::Pose>(msg->pose.pose);
 }
 
 void PlannerNode::timerCallback() {
@@ -64,28 +64,32 @@ void PlannerNode::timerCallback() {
 }
 
 bool PlannerNode::goalReached() {
-  double dx = goal_.point.x - robot_pose_.position.x;
-  double dy = goal_.point.y - robot_pose_.position.y;
+  double dx = goal_->point.x - robot_pose_->position.x;
+  double dy = goal_->point.y - robot_pose_->position.y;
   return std::sqrt(dx * dx + dy * dy) <
          goal_tolerance_; // Threshold for reaching the goal
 }
 
 void PlannerNode::planPath() {
-  if (!goal_received_ || current_map_.data.empty()) {
+  if (!goal_received_ || current_map_->data.empty()) {
     RCLCPP_WARN(this->get_logger(), "Cannot plan path: Missing map or goal!");
     return;
   }
 
   // TODO: A* Implementation (pseudo-code)
-  nav_msgs::msg::Path path;
-  path.header.stamp = this->get_clock()->now();
-  path.header.frame_id = "map";
-
   // Compute path using A* on current_map_
   // Fill path.poses with the resulting waypoints.
   // Use goal_, robot_pose_, and current_map_ for the computation.
+  planner_.planPath(current_map_, robot_pose_, goal_);
+  nav_msgs::msg::Path::SharedPtr path = planner_.getPath();
 
-  path_pub_->publish(path);
+  // Copy and set header fields
+  nav_msgs::msg::Path path_to_publish = *path;
+  path_to_publish.header.stamp = this->get_clock()->now();
+  path_to_publish.header.frame_id = "map";
+
+  // Publish the path
+  path_pub_->publish(path_to_publish);
 }
 
 int main(int argc, char **argv) {

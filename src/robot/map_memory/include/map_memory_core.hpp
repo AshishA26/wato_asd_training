@@ -29,10 +29,12 @@ public:
                            int8_t unknown_cell_value);
 
   // Integrate a costmap into the global map
-  void integrateCostmap(const nav_msgs::msg::OccupancyGrid::SharedPtr costmap,
-                        const RobotTransform &robot_world_transform);
+  void
+  integrateCostmap(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr costmap,
+                   const RobotTransform &robot_world_transform);
 
-  const nav_msgs::msg::OccupancyGrid::SharedPtr getGlobalMap() const;
+  // Get the current global map
+  nav_msgs::msg::OccupancyGrid::SharedPtr getGlobalMap() const;
 
 private:
   rclcpp::Logger logger_;

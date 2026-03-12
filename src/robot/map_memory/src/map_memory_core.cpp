@@ -27,7 +27,7 @@ void MapMemoryCore::initializeGlobalMap(const std::string &frame_id,
 }
 
 void MapMemoryCore::integrateCostmap(
-    const nav_msgs::msg::OccupancyGrid::SharedPtr costmap,
+    const nav_msgs::msg::OccupancyGrid::ConstSharedPtr costmap,
     const RobotTransform &robot_world_transform) {
 
   // Get yaw angle from quaternion
@@ -103,8 +103,7 @@ void MapMemoryCore::integrateCostmap(
   }
 }
 
-const nav_msgs::msg::OccupancyGrid::SharedPtr
-MapMemoryCore::getGlobalMap() const {
+nav_msgs::msg::OccupancyGrid::SharedPtr MapMemoryCore::getGlobalMap() const {
   return global_map_;
 }
 
