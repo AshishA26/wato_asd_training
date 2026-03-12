@@ -1,3 +1,7 @@
-# planner_node:
-#   ros__parameters:
-    
+planner_node:
+  ros__parameters:
+    map_topic: "/map"
+    odom_topic: "/odom/filtered"
+    goal_topic: "/goal_point"
+    path_topic: "/path"
+    goal_tolerance: 0.5
