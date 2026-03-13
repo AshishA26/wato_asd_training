@@ -8,14 +8,16 @@ PlannerCore::PlannerCore(const rclcpp::Logger &logger) : logger_(logger) {
 
 nav_msgs::msg::Path::SharedPtr
 PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
-                      const CellIndex &start, const CellIndex &goal) {
+                      const CellIndex &start, const CellIndex &goal,
+                      int cell_threshold) {
 
   map_ = map;
+  cell_threshold_ = cell_threshold;
   nav_msgs::msg::Path::SharedPtr path = std::make_shared<nav_msgs::msg::Path>();
 
   // 8-connected grid move costs
-  constexpr double kStraightCost = 1.0;
-  constexpr double kDiagonalCost = 1.41421356237;
+  const double kStraightCost = 1.0;
+  const double kDiagonalCost = 1.41421356237;
 
   // Open set (priority queue) and closed set (unordered set)
   // Open set is the set of nodes to explore while closed set is the set of
@@ -41,9 +43,10 @@ PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
 
   // Loop until the open set is empty or we find the goal
   while (!open_set.empty()) {
-    AStarNode current =
-        open_set.top(); // Since min-heap, top is the node with lowest f_score
-    open_set.pop();     // Remove the node from the open set
+    // Since min-heap, top is the node with lowest f_score
+    AStarNode current = open_set.top();
+    // Remove the node from the open set
+    open_set.pop();
     if (closed_set.count(current.index)) {
       continue; // Skip if we have already processed this node
     }
@@ -103,18 +106,19 @@ PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
       if (dx != 0 && dy != 0) {
         const CellIndex side_1(current.index.x + dx, current.index.y);
         const CellIndex side_2(current.index.x, current.index.y + dy);
-        if (!isTraversable(side_1) || !isTraversable(side_2)) {
+        if (!isTraversable(side_1, true) || !isTraversable(side_2, true)) {
           continue;
         }
       }
 
       // If neighbor is not traversable or neighbor is in closed set, skip it
-      if (!isTraversable(neighbor) || closed_set.count(neighbor)) {
+      if (!isTraversable(neighbor, true) || closed_set.count(neighbor)) {
         continue;
       }
 
       // Calculate tentative g score for the neighbor
-      const double step_cost = (dx != 0 && dy != 0) ? kDiagonalCost : kStraightCost;
+      const double step_cost =
+          (dx != 0 && dy != 0) ? kDiagonalCost : kStraightCost;
       double new_g_score = g_scores[current.index] + step_cost;
 
       // If neighbor is not in g_scores or new path to neighbor is shorter,
@@ -135,19 +139,25 @@ PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
   return path;
 }
 
-bool PlannerCore::isTraversable(const CellIndex &idx) const {
+bool PlannerCore::isTraversable(const CellIndex &idx,
+                                bool check_cell_cost) const {
   // Check if the index is within the bounds of the map
   if (idx.x < 0 || idx.y < 0 || idx.x >= static_cast<int>(map_->info.width) ||
       idx.y >= static_cast<int>(map_->info.height)) {
     return false; // Out of bounds
   }
 
+  // If we are not checking cell cost, just return true since it's within bounds
+  if (!check_cell_cost) {
+    return true;
+  }
+
   // Check if cell is occupied. Check the occupancy grid data at the
   // corresponding index. A value of -1 indicates an unknown cell, and values
-  // from less than 50 indicate free space.
+  // less than cell_threshold_ indicate free space.
   int i =
       idx.y * map_->info.width + idx.x; // Get value from occupancy grid (1D)
-  return map_->data[i] >= 0 && map_->data[i] < 50;
+  return map_->data[i] >= 0 && map_->data[i] < cell_threshold_;
 }
 
 double PlannerCore::distance(const CellIndex &a, const CellIndex &b) const {

@@ -11,7 +11,7 @@ MapMemoryNode::MapMemoryNode()
   int width = this->declare_parameter("width", 1000);
   int height = this->declare_parameter("height", 1000);
   distance_threshold_ = this->declare_parameter("distance_threshold", 1.5);
-  int8_t cell_threshold = this->declare_parameter("cell_threshold", 40);
+  int8_t cell_threshold = this->declare_parameter("cell_threshold", 50);
   int8_t unknown_cell_value = this->declare_parameter("unknown_cell_value", -1);
   std::string frame_id = this->declare_parameter("frame_id", "sim_world");
   std::string costmap_topic =

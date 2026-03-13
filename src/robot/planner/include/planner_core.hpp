@@ -60,12 +60,13 @@ public:
   // Main function to plan a path using A* algorithm
   nav_msgs::msg::Path::SharedPtr
   planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
-           const CellIndex &start, const CellIndex &goal);
-  bool isTraversable(const CellIndex &idx) const;
+           const CellIndex &start, const CellIndex &goal, int cell_threshold);
+  bool isTraversable(const CellIndex &idx, bool check_cell_cost) const;
 
 private:
   rclcpp::Logger logger_;
   nav_msgs::msg::OccupancyGrid::SharedPtr map_;
+  int cell_threshold_;
 
   // Helper functions
   double distance(const CellIndex &a, const CellIndex &b) const;

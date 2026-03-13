@@ -34,6 +34,7 @@ private:
 
   bool goal_received_ = false;
   double goal_tolerance_; // Tolerance to consider goal reached
+  int cell_threshold_;    // Threshold for considering a cell as occupied
 
   // Callback functions
   void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);

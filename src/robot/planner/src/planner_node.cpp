@@ -10,6 +10,7 @@ PlannerNode::PlannerNode()
       this->declare_parameter("odom_topic", "/odom/filtered");
   std::string path_topic = this->declare_parameter("path_topic", "/path");
   goal_tolerance_ = this->declare_parameter("goal_tolerance", 0.5);
+  cell_threshold_ = this->declare_parameter("cell_threshold", 50);
 
   // Subscribers
   map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
@@ -90,14 +91,16 @@ void PlannerNode::planPath() {
   const robot::CellIndex goal_point = convertWorldToGrid(goal_->point);
 
   // Check if goal is valid
-  if (!planner_.isTraversable(goal_point)) {
-    RCLCPP_WARN(this->get_logger(), "Goal position is not traversable!");
+  if (!planner_.isTraversable(goal_point, true) ||
+      !planner_.isTraversable(start_point, false)) {
+    RCLCPP_WARN(this->get_logger(),
+                "Goal or start position is not traversable!");
     return;
   }
 
   // Call the planner core to compute the path
   nav_msgs::msg::Path::SharedPtr path =
-      planner_.planPath(current_map_, start_point, goal_point);
+      planner_.planPath(current_map_, start_point, goal_point, cell_threshold_);
 
   if (!path || path->poses.empty()) {
     RCLCPP_WARN(this->get_logger(), "Planner failed.");
