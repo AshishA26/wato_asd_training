@@ -64,6 +64,12 @@ void PlannerNode::timerCallback() {
 }
 
 bool PlannerNode::goalReached() {
+  // Cannot determine if goal is reached without goal or robot pose
+  if (!goal_received_ || !robot_pose_) {
+    return false;
+  }
+
+  // Calculate the distance between robots position and the goal
   double dx = goal_->point.x - robot_pose_->position.x;
   double dy = goal_->point.y - robot_pose_->position.y;
   return std::sqrt(dx * dx + dy * dy) <
@@ -71,19 +77,32 @@ bool PlannerNode::goalReached() {
 }
 
 void PlannerNode::planPath() {
-  if (!goal_received_ || current_map_->data.empty()) {
-    RCLCPP_WARN(this->get_logger(), "Cannot plan path: Missing map or goal!");
+  if (!goal_received_ || !current_map_ || current_map_->data.empty() ||
+      !robot_pose_) {
+    RCLCPP_WARN(this->get_logger(),
+                "Cannot plan path: Missing map, goal, or robot pose!");
     return;
   }
 
   // Initialize start and goal points
-  robot::CellIndex start_point =
-      robot::CellIndex(robot_pose_->position.x, robot_pose_->position.y);
-  robot::CellIndex goal_point = robot::CellIndex(goal_->point.x, goal_->point.y);
+  const robot::CellIndex start_point =
+      convertWorldToGrid(robot_pose_->position);
+  const robot::CellIndex goal_point = convertWorldToGrid(goal_->point);
+
+  // Check if goal is valid
+  if (!planner_.isTraversable(goal_point)) {
+    RCLCPP_WARN(this->get_logger(), "Goal position is not traversable!");
+    return;
+  }
 
   // Call the planner core to compute the path
-  planner_.planPath(current_map_, start_point, goal_point);
-  nav_msgs::msg::Path::SharedPtr path = planner_.getPath();
+  nav_msgs::msg::Path::SharedPtr path =
+      planner_.planPath(current_map_, start_point, goal_point);
+
+  if (!path || path->poses.empty()) {
+    RCLCPP_WARN(this->get_logger(), "Planner failed.");
+    return;
+  }
 
   // Copy and set header fields
   nav_msgs::msg::Path path_to_publish = *path;
@@ -92,6 +111,20 @@ void PlannerNode::planPath() {
 
   // Publish the path
   path_pub_->publish(path_to_publish);
+}
+
+robot::CellIndex
+PlannerNode::convertWorldToGrid(const geometry_msgs::msg::Point &point) {
+  // Converts world coordinates to grid indices based on the map's resolution
+  // and origin. Need to shift the point relative to the map's origin and then
+  // divide by the resolution to get cell indices.
+  int x_index =
+      static_cast<int>((point.x - current_map_->info.origin.position.x) /
+                       current_map_->info.resolution);
+  int y_index =
+      static_cast<int>((point.y - current_map_->info.origin.position.y) /
+                       current_map_->info.resolution);
+  return robot::CellIndex(x_index, y_index);
 }
 
 int main(int argc, char **argv) {

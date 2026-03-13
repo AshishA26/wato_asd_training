@@ -3,15 +3,19 @@
 namespace robot {
 
 PlannerCore::PlannerCore(const rclcpp::Logger &logger) : logger_(logger) {
-  path_ = std::make_shared<nav_msgs::msg::Path>();
   map_ = std::make_shared<nav_msgs::msg::OccupancyGrid>();
 }
 
-void PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
-                           const CellIndex &start, const CellIndex &goal) {
+nav_msgs::msg::Path::SharedPtr
+PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
+                      const CellIndex &start, const CellIndex &goal) {
 
   map_ = map;
-  path_->poses.clear();
+  nav_msgs::msg::Path::SharedPtr path = std::make_shared<nav_msgs::msg::Path>();
+
+  // 8-connected grid move costs
+  constexpr double kStraightCost = 1.0;
+  constexpr double kDiagonalCost = 1.41421356237;
 
   // Open set (priority queue) and closed set (unordered set)
   // Open set is the set of nodes to explore while closed set is the set of
@@ -27,7 +31,8 @@ void PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
   std::unordered_map<CellIndex, double, CellIndexHash> g_scores;
 
   // Initialize the open set with the start node
-  open_set.emplace(start, distance(start, goal)); // f_score for start node is 0
+  open_set.emplace(start, distance(start, goal));
+  g_scores[start] = 0.0;
 
   // Note:
   // - G is the distance from starting node to current node
@@ -39,12 +44,41 @@ void PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
     AStarNode current =
         open_set.top(); // Since min-heap, top is the node with lowest f_score
     open_set.pop();     // Remove the node from the open set
+    if (closed_set.count(current.index)) {
+      continue; // Skip if we have already processed this node
+    }
     closed_set.insert(current.index); // Add the node to the closed set
 
+    // Check if we have reached the goal. If so, reconstruct the path.
     if (current.index == goal) {
-      // Path found! Reconstruct the path and store it in path_.
-      // TODO
-      return;
+      CellIndex curr = goal;
+
+      // While we have a parent for the current node, add it to the path and
+      // move to the parent. Note need to convert from grid coordinates to world
+      // coordinates when adding to the path.
+      while (came_from.count(curr)) {
+        geometry_msgs::msg::PoseStamped pose;
+        pose.pose.position.x =
+            curr.x * map_->info.resolution + map_->info.origin.position.x;
+        pose.pose.position.y =
+            curr.y * map_->info.resolution + map_->info.origin.position.y;
+        pose.pose.orientation.w = 1.0;
+        path->poses.push_back(pose);
+        curr = came_from[curr];
+      }
+
+      // Add the start node to the path
+      geometry_msgs::msg::PoseStamped start_pose;
+      start_pose.pose.position.x =
+          start.x * map_->info.resolution + map_->info.origin.position.x;
+      start_pose.pose.position.y =
+          start.y * map_->info.resolution + map_->info.origin.position.y;
+      path->poses.push_back(start_pose);
+
+      // Reverse the path to get it from start to goal instead of goal to start
+      std::reverse(path->poses.begin(), path->poses.end());
+
+      return path;
     }
 
     // Generate neighbors of the current node
@@ -61,21 +95,34 @@ void PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
 
     // Check each neighbor
     for (const CellIndex &neighbor : neighbors) {
+      const int dx = neighbor.x - current.index.x;
+      const int dy = neighbor.y - current.index.y;
+
+      // Prevent diagonal corner cutting.
+      // If moving diagonally, both side-adjacent cells must be traversable.
+      if (dx != 0 && dy != 0) {
+        const CellIndex side_1(current.index.x + dx, current.index.y);
+        const CellIndex side_2(current.index.x, current.index.y + dy);
+        if (!isTraversable(side_1) || !isTraversable(side_2)) {
+          continue;
+        }
+      }
+
       // If neighbor is not traversable or neighbor is in closed set, skip it
-      if (!isTraversable(neighbor) ||
-          closed_set.find(neighbor) != closed_set.end()) {
+      if (!isTraversable(neighbor) || closed_set.count(neighbor)) {
         continue;
       }
 
-      double new_g_score =
-          g_scores[current.index] + distance(current.index, neighbor);
+      // Calculate tentative g score for the neighbor
+      const double step_cost = (dx != 0 && dy != 0) ? kDiagonalCost : kStraightCost;
+      double new_g_score = g_scores[current.index] + step_cost;
 
-      // If neighbor is not in open set or new path to neighbor is shorter,
+      // If neighbor is not in g_scores or new path to neighbor is shorter,
       // update the scores and parent. Note that since we don't check if the
       // neighbor is in the open set, we might add duplicates to the open set,
       // but they will be ignored when we pop them later if they have a higher
       // f_score.
-      if (new_g_score < g_scores[neighbor] || !g_scores.count(neighbor)) {
+      if (!g_scores.count(neighbor) || new_g_score < g_scores[neighbor]) {
         g_scores[neighbor] = new_g_score;
         came_from[neighbor] = current.index;
         double h_score = distance(neighbor, goal);
@@ -84,6 +131,8 @@ void PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
       }
     }
   }
+  RCLCPP_WARN(logger_, "Failed to find path");
+  return path;
 }
 
 bool PlannerCore::isTraversable(const CellIndex &idx) const {
@@ -103,9 +152,9 @@ bool PlannerCore::isTraversable(const CellIndex &idx) const {
 
 double PlannerCore::distance(const CellIndex &a, const CellIndex &b) const {
   // Use Euclidean distance
-  return std::sqrt(std::pow(a.x - b.x, 2) + std::pow(a.y - b.y, 2));
+  int dx = a.x - b.x;
+  int dy = a.y - b.y;
+  return std::sqrt(dx * dx + dy * dy);
 }
-
-nav_msgs::msg::Path::SharedPtr PlannerCore::getPath() const { return path_; }
 
 } // namespace robot

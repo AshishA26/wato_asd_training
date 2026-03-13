@@ -40,8 +40,11 @@ private:
   void goalCallback(const geometry_msgs::msg::PointStamped::SharedPtr msg);
   void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
   void timerCallback();
+
+  // Helper functions
   void planPath();
   bool goalReached();
+  robot::CellIndex convertWorldToGrid(const geometry_msgs::msg::Point &point);
 };
 
 #endif

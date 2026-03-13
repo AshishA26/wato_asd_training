@@ -42,12 +42,12 @@ struct AStarNode {
   CellIndex index;
   double f_score; // f = g + h
 
-  AStarNode(CellIndex idx, double f) : index(idx), f_score(f) {}
+  AStarNode(const CellIndex &idx, double f) : index(idx), f_score(f) {}
 };
 
 // Comparator for the priority queue (min-heap by f_score)
 struct CompareF {
-  bool operator()(const AStarNode &a, const AStarNode &b) {
+  bool operator()(const AStarNode &a, const AStarNode &b) const {
     // We want the node with the smallest f_score on top
     return a.f_score > b.f_score;
   }
@@ -58,19 +58,16 @@ public:
   explicit PlannerCore(const rclcpp::Logger &logger);
 
   // Main function to plan a path using A* algorithm
-  void planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
-                const CellIndex &start, const CellIndex &goal);
-
-  // Function to retrieve the planned path
-  nav_msgs::msg::Path::SharedPtr getPath() const;
+  nav_msgs::msg::Path::SharedPtr
+  planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
+           const CellIndex &start, const CellIndex &goal);
+  bool isTraversable(const CellIndex &idx) const;
 
 private:
   rclcpp::Logger logger_;
-  nav_msgs::msg::Path::SharedPtr path_;
   nav_msgs::msg::OccupancyGrid::SharedPtr map_;
 
   // Helper functions
-  bool isTraversable(const CellIndex &idx) const;
   double distance(const CellIndex &a, const CellIndex &b) const;
 };
 
