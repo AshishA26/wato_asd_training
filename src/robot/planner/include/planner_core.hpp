@@ -6,6 +6,9 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include <queue>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace robot {
 
@@ -56,8 +59,7 @@ public:
 
   // Main function to plan a path using A* algorithm
   void planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
-                const geometry_msgs::msg::Pose::SharedPtr &robot_pose,
-                const geometry_msgs::msg::PointStamped::SharedPtr &goal);
+                const CellIndex &start, const CellIndex &goal);
 
   // Function to retrieve the planned path
   nav_msgs::msg::Path::SharedPtr getPath() const;
@@ -65,6 +67,11 @@ public:
 private:
   rclcpp::Logger logger_;
   nav_msgs::msg::Path::SharedPtr path_;
+  nav_msgs::msg::OccupancyGrid::SharedPtr map_;
+
+  // Helper functions
+  bool isTraversable(const CellIndex &idx) const;
+  double distance(const CellIndex &a, const CellIndex &b) const;
 };
 
 } // namespace robot

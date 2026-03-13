@@ -76,11 +76,13 @@ void PlannerNode::planPath() {
     return;
   }
 
-  // TODO: A* Implementation (pseudo-code)
-  // Compute path using A* on current_map_
-  // Fill path.poses with the resulting waypoints.
-  // Use goal_, robot_pose_, and current_map_ for the computation.
-  planner_.planPath(current_map_, robot_pose_, goal_);
+  // Initialize start and goal points
+  robot::CellIndex start_point =
+      robot::CellIndex(robot_pose_->position.x, robot_pose_->position.y);
+  robot::CellIndex goal_point = robot::CellIndex(goal_->point.x, goal_->point.y);
+
+  // Call the planner core to compute the path
+  planner_.planPath(current_map_, start_point, goal_point);
   nav_msgs::msg::Path::SharedPtr path = planner_.getPath();
 
   // Copy and set header fields
