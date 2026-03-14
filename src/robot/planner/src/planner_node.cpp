@@ -87,12 +87,13 @@ void PlannerNode::planPath() {
 
   // Initialize start and goal points
   const robot::CellIndex start_point =
-      convertWorldToGrid(robot_pose_->position);
-  const robot::CellIndex goal_point = convertWorldToGrid(goal_->point);
+      planner_.convertWorldToGrid(robot_pose_->position, current_map_);
+  const robot::CellIndex goal_point =
+      planner_.convertWorldToGrid(goal_->point, current_map_);
 
   // Check if goal is valid
-  if (!planner_.isTraversable(goal_point, true) ||
-      !planner_.isTraversable(start_point, false)) {
+  if (!planner_.isTraversable(goal_point, current_map_, cell_threshold_) ||
+      !planner_.isTraversable(start_point, current_map_)) {
     RCLCPP_WARN(this->get_logger(),
                 "Goal or start position is not traversable!");
     return;
@@ -110,24 +111,10 @@ void PlannerNode::planPath() {
   // Copy and set header fields
   nav_msgs::msg::Path path_to_publish = *path;
   path_to_publish.header.stamp = this->get_clock()->now();
-  path_to_publish.header.frame_id = "map";
+  path_to_publish.header.frame_id = current_map_->header.frame_id;
 
   // Publish the path
   path_pub_->publish(path_to_publish);
-}
-
-robot::CellIndex
-PlannerNode::convertWorldToGrid(const geometry_msgs::msg::Point &point) {
-  // Converts world coordinates to grid indices based on the map's resolution
-  // and origin. Need to shift the point relative to the map's origin and then
-  // divide by the resolution to get cell indices.
-  int x_index =
-      static_cast<int>((point.x - current_map_->info.origin.position.x) /
-                       current_map_->info.resolution);
-  int y_index =
-      static_cast<int>((point.y - current_map_->info.origin.position.y) /
-                       current_map_->info.resolution);
-  return robot::CellIndex(x_index, y_index);
 }
 
 int main(int argc, char **argv) {

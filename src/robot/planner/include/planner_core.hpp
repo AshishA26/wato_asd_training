@@ -6,6 +6,7 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include <optional>
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
@@ -60,16 +61,19 @@ public:
   // Main function to plan a path using A* algorithm
   nav_msgs::msg::Path::SharedPtr
   planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
-           const CellIndex &start, const CellIndex &goal, int cell_threshold);
-  bool isTraversable(const CellIndex &idx, bool check_cell_cost) const;
+           const CellIndex &start, const CellIndex &goal,
+           const int cell_threshold);
+  bool
+  isTraversable(const CellIndex &idx,
+                const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
+                const std::optional<int> cell_threshold = std::nullopt) const;
+  CellIndex
+  convertWorldToGrid(const geometry_msgs::msg::Point &point,
+                     const nav_msgs::msg::OccupancyGrid::SharedPtr &map);
+  double distance(const CellIndex &a, const CellIndex &b) const;
 
 private:
   rclcpp::Logger logger_;
-  nav_msgs::msg::OccupancyGrid::SharedPtr map_;
-  int cell_threshold_;
-
-  // Helper functions
-  double distance(const CellIndex &a, const CellIndex &b) const;
 };
 
 } // namespace robot

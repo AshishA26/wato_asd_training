@@ -1,3 +1,8 @@
-# control_node:
-#   ros__parameters:
-    
+control_node:
+  ros__parameters:
+    lookahead_distance: 1.0 # Lookahead distance
+    goal_tolerance: 0.1     # Distance to consider the goal reached
+    linear_speed: 0.5       # Constant forward speed
+    path_topic: "/path"
+    odom_topic: "/odom/filtered"
+    cmd_vel_topic: "/cmd_vel"

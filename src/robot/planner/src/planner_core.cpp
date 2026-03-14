@@ -2,22 +2,14 @@
 
 namespace robot {
 
-PlannerCore::PlannerCore(const rclcpp::Logger &logger) : logger_(logger) {
-  map_ = std::make_shared<nav_msgs::msg::OccupancyGrid>();
-}
+PlannerCore::PlannerCore(const rclcpp::Logger &logger) : logger_(logger) {}
 
 nav_msgs::msg::Path::SharedPtr
 PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
                       const CellIndex &start, const CellIndex &goal,
-                      int cell_threshold) {
+                      const int cell_threshold) {
 
-  map_ = map;
-  cell_threshold_ = cell_threshold;
   nav_msgs::msg::Path::SharedPtr path = std::make_shared<nav_msgs::msg::Path>();
-
-  // 8-connected grid move costs
-  const double kStraightCost = 1.0;
-  const double kDiagonalCost = 1.41421356237;
 
   // Open set (priority queue) and closed set (unordered set)
   // Open set is the set of nodes to explore while closed set is the set of
@@ -62,9 +54,9 @@ PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
       while (came_from.count(curr)) {
         geometry_msgs::msg::PoseStamped pose;
         pose.pose.position.x =
-            curr.x * map_->info.resolution + map_->info.origin.position.x;
+            curr.x * map->info.resolution + map->info.origin.position.x;
         pose.pose.position.y =
-            curr.y * map_->info.resolution + map_->info.origin.position.y;
+            curr.y * map->info.resolution + map->info.origin.position.y;
         pose.pose.orientation.w = 1.0;
         path->poses.push_back(pose);
         curr = came_from[curr];
@@ -73,9 +65,9 @@ PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
       // Add the start node to the path
       geometry_msgs::msg::PoseStamped start_pose;
       start_pose.pose.position.x =
-          start.x * map_->info.resolution + map_->info.origin.position.x;
+          start.x * map->info.resolution + map->info.origin.position.x;
       start_pose.pose.position.y =
-          start.y * map_->info.resolution + map_->info.origin.position.y;
+          start.y * map->info.resolution + map->info.origin.position.y;
       path->poses.push_back(start_pose);
 
       // Reverse the path to get it from start to goal instead of goal to start
@@ -106,20 +98,23 @@ PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
       if (dx != 0 && dy != 0) {
         const CellIndex side_1(current.index.x + dx, current.index.y);
         const CellIndex side_2(current.index.x, current.index.y + dy);
-        if (!isTraversable(side_1, true) || !isTraversable(side_2, true)) {
+        if (!isTraversable(side_1, map, cell_threshold) ||
+            !isTraversable(side_2, map, cell_threshold)) {
           continue;
         }
       }
 
       // If neighbor is not traversable or neighbor is in closed set, skip it
-      if (!isTraversable(neighbor, true) || closed_set.count(neighbor)) {
+      if (!isTraversable(neighbor, map, cell_threshold) ||
+          closed_set.count(neighbor)) {
         continue;
       }
 
-      // Calculate tentative g score for the neighbor
-      const double step_cost =
-          (dx != 0 && dy != 0) ? kDiagonalCost : kStraightCost;
-      double new_g_score = g_scores[current.index] + step_cost;
+      // Calculate tentative g score for the neighbor. Note that due to
+      // distance, a diagonal cell will have a slightly higher cost than a
+      // straight cell, which aligns with the logic of using 1 and 1.414.
+      double new_g_score =
+          g_scores[current.index] + distance(current.index, neighbor);
 
       // If neighbor is not in g_scores or new path to neighbor is shorter,
       // update the scores and parent. Note that since we don't check if the
@@ -139,25 +134,25 @@ PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
   return path;
 }
 
-bool PlannerCore::isTraversable(const CellIndex &idx,
-                                bool check_cell_cost) const {
+bool PlannerCore::isTraversable(
+    const CellIndex &idx, const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
+    const std::optional<int> cell_threshold) const {
   // Check if the index is within the bounds of the map
-  if (idx.x < 0 || idx.y < 0 || idx.x >= static_cast<int>(map_->info.width) ||
-      idx.y >= static_cast<int>(map_->info.height)) {
+  if (idx.x < 0 || idx.y < 0 || idx.x >= static_cast<int>(map->info.width) ||
+      idx.y >= static_cast<int>(map->info.height)) {
     return false; // Out of bounds
   }
 
   // If we are not checking cell cost, just return true since it's within bounds
-  if (!check_cell_cost) {
+  if (!cell_threshold.has_value()) {
     return true;
   }
 
   // Check if cell is occupied. Check the occupancy grid data at the
   // corresponding index. A value of -1 indicates an unknown cell, and values
-  // less than cell_threshold_ indicate free space.
-  int i =
-      idx.y * map_->info.width + idx.x; // Get value from occupancy grid (1D)
-  return map_->data[i] >= 0 && map_->data[i] < cell_threshold_;
+  // less than cell_threshold indicate free space.
+  int i = idx.y * map->info.width + idx.x; // Get value from occupancy grid (1D)
+  return map->data[i] >= 0 && map->data[i] < cell_threshold;
 }
 
 double PlannerCore::distance(const CellIndex &a, const CellIndex &b) const {
@@ -165,6 +160,19 @@ double PlannerCore::distance(const CellIndex &a, const CellIndex &b) const {
   int dx = a.x - b.x;
   int dy = a.y - b.y;
   return std::sqrt(dx * dx + dy * dy);
+}
+
+CellIndex PlannerCore::convertWorldToGrid(
+    const geometry_msgs::msg::Point &point,
+    const nav_msgs::msg::OccupancyGrid::SharedPtr &map) {
+  // Converts world coordinates to grid indices based on the map's resolution
+  // and origin. Need to shift the point relative to the map's origin and then
+  // divide by the resolution to get cell indices.
+  int x_index = static_cast<int>((point.x - map->info.origin.position.x) /
+                                 map->info.resolution);
+  int y_index = static_cast<int>((point.y - map->info.origin.position.y) /
+                                 map->info.resolution);
+  return CellIndex(x_index, y_index);
 }
 
 } // namespace robot

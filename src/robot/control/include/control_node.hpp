@@ -13,6 +13,7 @@ public:
 
 private:
   robot::ControlCore control_;
+
   // Subscribers and Publishers
   rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
@@ -31,14 +32,6 @@ private:
   double linear_speed_;
 
   void controlLoop();
-  std::optional<geometry_msgs::msg::PoseStamped> findLookaheadPoint();
-
-  geometry_msgs::msg::Twist
-  computeVelocity(const geometry_msgs::msg::PoseStamped &target);
-
-  double computeDistance(const geometry_msgs::msg::Point &a,
-                         const geometry_msgs::msg::Point &b);
-  double extractYaw(const geometry_msgs::msg::Quaternion &quat);
 };
 
 #endif

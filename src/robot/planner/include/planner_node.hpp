@@ -48,7 +48,6 @@ private:
   // Helper functions
   void planPath();
   bool goalReached();
-  robot::CellIndex convertWorldToGrid(const geometry_msgs::msg::Point &point);
 };
 
 #endif
