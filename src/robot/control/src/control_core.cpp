@@ -1,9 +1,7 @@
 #include "control_core.hpp"
 
-namespace robot
-{
+namespace robot {
 
-ControlCore::ControlCore(const rclcpp::Logger& logger) 
-  : logger_(logger) {}
+ControlCore::ControlCore(const rclcpp::Logger &logger) : logger_(logger) {}
 
-}  
+} // namespace robot
