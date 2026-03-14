@@ -6,7 +6,6 @@
 #include <geometry_msgs/msg/twist.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
-#include <optional>
 
 namespace robot {
 
@@ -15,14 +14,14 @@ public:
   ControlCore(const rclcpp::Logger &logger);
 
   // Logic to find the lookahead point on the path
-  std::optional<geometry_msgs::msg::PoseStamped::SharedPtr>
+  geometry_msgs::msg::PoseStamped
   findLookaheadPoint(const nav_msgs::msg::Path::SharedPtr &path,
                      const nav_msgs::msg::Odometry::SharedPtr &odom,
                      double lookahead_distance);
 
   // Logic to compute velocity commands
   geometry_msgs::msg::Twist
-  computeVelocity(const geometry_msgs::msg::PoseStamped::SharedPtr &target,
+  computeVelocity(const geometry_msgs::msg::PoseStamped &target,
                   const nav_msgs::msg::Odometry::SharedPtr &odom,
                   double linear_speed);
 

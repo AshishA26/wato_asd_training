@@ -4,12 +4,12 @@ namespace robot {
 
 ControlCore::ControlCore(const rclcpp::Logger &logger) : logger_(logger) {}
 
-std::optional<geometry_msgs::msg::PoseStamped::SharedPtr>
+geometry_msgs::msg::PoseStamped
 ControlCore::findLookaheadPoint(const nav_msgs::msg::Path::SharedPtr &path,
                                 const nav_msgs::msg::Odometry::SharedPtr &odom,
                                 double lookahead_distance) {
   if (!path || path->poses.empty() || !odom) {
-    return std::nullopt;
+    return geometry_msgs::msg::PoseStamped();
   }
 
   // Get the robot's current position
@@ -19,16 +19,16 @@ ControlCore::findLookaheadPoint(const nav_msgs::msg::Path::SharedPtr &path,
   for (const auto &pose : path->poses) {
     double dist = computeDistance(robot_pos, pose.pose.position);
     if (dist >= lookahead_distance) {
-      return std::make_shared<geometry_msgs::msg::PoseStamped>(pose);
+      return pose;
     }
   }
 
   // Return the last point if no lookahead point is found
-  return std::make_shared<geometry_msgs::msg::PoseStamped>(path->poses.back());
+  return path->poses.back();
 }
 
 geometry_msgs::msg::Twist ControlCore::computeVelocity(
-    const geometry_msgs::msg::PoseStamped::SharedPtr &target,
+    const geometry_msgs::msg::PoseStamped &target,
     const nav_msgs::msg::Odometry::SharedPtr &odom, double linear_speed) {
   geometry_msgs::msg::Twist cmd_vel;
 
@@ -38,8 +38,8 @@ geometry_msgs::msg::Twist ControlCore::computeVelocity(
   double robot_yaw = extractYaw(odom->pose.pose.orientation);
 
   // Get target position (world frame)
-  double target_x = target->pose.position.x;
-  double target_y = target->pose.position.y;
+  double target_x = target.pose.position.x;
+  double target_y = target.pose.position.y;
 
   // Apply rotation using rotation matrix. Converts world
   // coordinates of target point to robot-centric coordinates

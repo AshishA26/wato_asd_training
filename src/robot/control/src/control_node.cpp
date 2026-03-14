@@ -31,7 +31,14 @@ ControlNode::ControlNode()
 
 void ControlNode::controlLoop() {
   // Skip control if no path or odometry data is available
-  if (!current_path_ || current_path_->poses.empty() || !robot_odom_) {
+  if (!current_path_ || !robot_odom_) {
+    return;
+  }
+
+  // If an empty path is received, stop the robot to avoid stale commands
+  if (current_path_->poses.empty()) {
+    geometry_msgs::msg::Twist stop_cmd;
+    cmd_vel_pub_->publish(stop_cmd);
     return;
   }
 
@@ -49,13 +56,10 @@ void ControlNode::controlLoop() {
   // Find the lookahead point
   auto lookahead_point = control_.findLookaheadPoint(current_path_, robot_odom_,
                                                      lookahead_distance_);
-  if (!lookahead_point) {
-    return; // No valid lookahead point found
-  }
 
   // Compute velocity command. Target is the lookahead point.
   auto cmd_vel =
-      control_.computeVelocity(*lookahead_point, robot_odom_, linear_speed_);
+      control_.computeVelocity(lookahead_point, robot_odom_, linear_speed_);
 
   // Publish the velocity command
   cmd_vel_pub_->publish(cmd_vel);
