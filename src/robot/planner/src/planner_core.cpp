@@ -157,8 +157,8 @@ bool PlannerCore::isTraversable(
 
 double PlannerCore::distance(const CellIndex &a, const CellIndex &b) const {
   // Use Euclidean distance
-  int dx = a.x - b.x;
-  int dy = a.y - b.y;
+  double dx = a.x - b.x;
+  double dy = a.y - b.y;
   return std::sqrt(dx * dx + dy * dy);
 }
 
