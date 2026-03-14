@@ -115,6 +115,16 @@ void PlannerNode::planPath() {
   path_to_publish.header.stamp = this->get_clock()->now();
   path_to_publish.header.frame_id = current_map_->header.frame_id;
 
+  // Ensure each pose carries a valid header for visualization tools
+  for (auto &pose : path_to_publish.poses) {
+    pose.header.stamp = path_to_publish.header.stamp;
+    pose.header.frame_id = path_to_publish.header.frame_id;
+  }
+
+  RCLCPP_INFO(this->get_logger(), "Publishing path with %zu poses in frame '%s'",
+              path_to_publish.poses.size(),
+              path_to_publish.header.frame_id.c_str());
+
   // Publish the path
   path_pub_->publish(path_to_publish);
 }
