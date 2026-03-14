@@ -5,4 +5,4 @@ planner_node:
     goal_topic: "/goal_point"
     path_topic: "/path"
     goal_tolerance: 0.5
-    cell_threshold: 50
+    cell_threshold: 30

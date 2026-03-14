@@ -4,7 +4,7 @@ map_memory_node:
     width: 1000
     height: 1000
     distance_threshold: 1.5
-    cell_threshold: 50
+    cell_threshold: 30
     unknown_cell_value: -1
 
     costmap_topic: "/costmap"

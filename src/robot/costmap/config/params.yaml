@@ -1,4 +1,4 @@
-costmap:
+costmap_node:
   ros__parameters:
     resolution: 0.1
     width: 1000
