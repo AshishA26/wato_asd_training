@@ -23,8 +23,8 @@ private:
   rclcpp::TimerBase::SharedPtr control_timer_;
 
   // Data
-  nav_msgs::msg::Path::SharedPtr current_path_;
-  nav_msgs::msg::Odometry::SharedPtr robot_odom_;
+  nav_msgs::msg::Path::ConstSharedPtr current_path_;
+  nav_msgs::msg::Odometry::ConstSharedPtr robot_odom_;
 
   // Parameters
   double lookahead_distance_;

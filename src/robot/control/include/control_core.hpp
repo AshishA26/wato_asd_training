@@ -15,14 +15,14 @@ public:
 
   // Logic to find the lookahead point on the path
   geometry_msgs::msg::PoseStamped
-  findLookaheadPoint(const nav_msgs::msg::Path::SharedPtr &path,
-                     const nav_msgs::msg::Odometry::SharedPtr &odom,
+  findLookaheadPoint(const nav_msgs::msg::Path::ConstSharedPtr &path,
+                     const nav_msgs::msg::Odometry::ConstSharedPtr &odom,
                      double lookahead_distance);
 
   // Logic to compute velocity commands
   geometry_msgs::msg::Twist
   computeVelocity(const geometry_msgs::msg::PoseStamped &target,
-                  const nav_msgs::msg::Odometry::SharedPtr &odom,
+                  const nav_msgs::msg::Odometry::ConstSharedPtr &odom,
                   double linear_speed);
 
   double computeDistance(const geometry_msgs::msg::Point &a,

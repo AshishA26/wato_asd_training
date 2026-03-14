@@ -89,7 +89,7 @@ void MapMemoryNode::updateMap() {
     map_memory_.integrateCostmap(latest_costmap_, robot_world_transform_);
 
     // Get the updated global map
-    nav_msgs::msg::OccupancyGrid::SharedPtr global_map =
+    nav_msgs::msg::OccupancyGrid::ConstSharedPtr global_map =
         map_memory_.getGlobalMap();
 
     // Copy and update the header for publishing

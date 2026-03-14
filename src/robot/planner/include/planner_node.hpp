@@ -27,22 +27,23 @@ private:
   rclcpp::TimerBase::SharedPtr timer_;
 
   // The occupancy grid map
-  nav_msgs::msg::OccupancyGrid::SharedPtr current_map_;
+  nav_msgs::msg::OccupancyGrid::ConstSharedPtr current_map_;
 
   // The goal point
-  geometry_msgs::msg::PointStamped::SharedPtr goal_;
+  geometry_msgs::msg::PointStamped::ConstSharedPtr goal_;
 
   // The robot's current pose
-  geometry_msgs::msg::Pose::SharedPtr robot_pose_;
+  geometry_msgs::msg::Pose robot_pose_;
+  bool robot_pose_received_ = false;
 
   bool goal_received_ = false;
   double goal_tolerance_; // Tolerance to consider goal reached
   int cell_threshold_;    // Threshold for considering a cell as occupied
 
   // Callback functions
-  void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
-  void goalCallback(const geometry_msgs::msg::PointStamped::SharedPtr msg);
-  void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
+  void mapCallback(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg);
+  void goalCallback(const geometry_msgs::msg::PointStamped::ConstSharedPtr msg);
+  void odomCallback(const nav_msgs::msg::Odometry::ConstSharedPtr msg);
   void timerCallback();
 
   // Helper functions

@@ -4,12 +4,12 @@ namespace robot {
 
 PlannerCore::PlannerCore(const rclcpp::Logger &logger) : logger_(logger) {}
 
-nav_msgs::msg::Path::SharedPtr
-PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
+nav_msgs::msg::Path
+PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr &map,
                       const CellIndex &start, const CellIndex &goal,
                       const int cell_threshold) {
 
-  nav_msgs::msg::Path::SharedPtr path = std::make_shared<nav_msgs::msg::Path>();
+  nav_msgs::msg::Path path;
 
   // Open set (priority queue) and closed set (unordered set)
   // Open set is the set of nodes to explore while closed set is the set of
@@ -58,7 +58,7 @@ PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
         pose.pose.position.y =
             curr.y * map->info.resolution + map->info.origin.position.y;
         pose.pose.orientation.w = 1.0;
-        path->poses.push_back(pose);
+        path.poses.push_back(pose);
         curr = came_from[curr];
       }
 
@@ -68,10 +68,10 @@ PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
           start.x * map->info.resolution + map->info.origin.position.x;
       start_pose.pose.position.y =
           start.y * map->info.resolution + map->info.origin.position.y;
-      path->poses.push_back(start_pose);
+      path.poses.push_back(start_pose);
 
       // Reverse the path to get it from start to goal instead of goal to start
-      std::reverse(path->poses.begin(), path->poses.end());
+      std::reverse(path.poses.begin(), path.poses.end());
 
       return path;
     }
@@ -135,7 +135,8 @@ PlannerCore::planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
 }
 
 bool PlannerCore::isTraversable(
-    const CellIndex &idx, const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
+    const CellIndex &idx,
+    const nav_msgs::msg::OccupancyGrid::ConstSharedPtr &map,
     const std::optional<int> cell_threshold) const {
   // Check if the index is within the bounds of the map
   if (idx.x < 0 || idx.y < 0 || idx.x >= static_cast<int>(map->info.width) ||
@@ -164,7 +165,7 @@ double PlannerCore::distance(const CellIndex &a, const CellIndex &b) const {
 
 CellIndex PlannerCore::convertWorldToGrid(
     const geometry_msgs::msg::Point &point,
-    const nav_msgs::msg::OccupancyGrid::SharedPtr &map) {
+    const nav_msgs::msg::OccupancyGrid::ConstSharedPtr &map) {
   // Converts world coordinates to grid indices based on the map's resolution
   // and origin. Need to shift the point relative to the map's origin and then
   // divide by the resolution to get cell indices.

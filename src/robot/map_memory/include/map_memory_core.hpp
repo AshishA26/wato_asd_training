@@ -34,7 +34,7 @@ public:
                    const RobotTransform &robot_world_transform);
 
   // Get the current global map
-  nav_msgs::msg::OccupancyGrid::SharedPtr getGlobalMap() const;
+  nav_msgs::msg::OccupancyGrid::ConstSharedPtr getGlobalMap() const;
 
 private:
   rclcpp::Logger logger_;

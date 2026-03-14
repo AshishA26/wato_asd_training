@@ -59,17 +59,17 @@ public:
   explicit PlannerCore(const rclcpp::Logger &logger);
 
   // Main function to plan a path using A* algorithm
-  nav_msgs::msg::Path::SharedPtr
-  planPath(const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
+  nav_msgs::msg::Path
+  planPath(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr &map,
            const CellIndex &start, const CellIndex &goal,
            const int cell_threshold);
   bool
   isTraversable(const CellIndex &idx,
-                const nav_msgs::msg::OccupancyGrid::SharedPtr &map,
+                const nav_msgs::msg::OccupancyGrid::ConstSharedPtr &map,
                 const std::optional<int> cell_threshold = std::nullopt) const;
   CellIndex
   convertWorldToGrid(const geometry_msgs::msg::Point &point,
-                     const nav_msgs::msg::OccupancyGrid::SharedPtr &map);
+                     const nav_msgs::msg::OccupancyGrid::ConstSharedPtr &map);
   double distance(const CellIndex &a, const CellIndex &b) const;
 
 private:

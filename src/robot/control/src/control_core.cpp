@@ -5,9 +5,10 @@ namespace robot {
 ControlCore::ControlCore(const rclcpp::Logger &logger) : logger_(logger) {}
 
 geometry_msgs::msg::PoseStamped
-ControlCore::findLookaheadPoint(const nav_msgs::msg::Path::SharedPtr &path,
-                                const nav_msgs::msg::Odometry::SharedPtr &odom,
-                                double lookahead_distance) {
+ControlCore::findLookaheadPoint(
+  const nav_msgs::msg::Path::ConstSharedPtr &path,
+  const nav_msgs::msg::Odometry::ConstSharedPtr &odom,
+  double lookahead_distance) {
   if (!path || path->poses.empty() || !odom) {
     return geometry_msgs::msg::PoseStamped();
   }
@@ -29,7 +30,8 @@ ControlCore::findLookaheadPoint(const nav_msgs::msg::Path::SharedPtr &path,
 
 geometry_msgs::msg::Twist ControlCore::computeVelocity(
     const geometry_msgs::msg::PoseStamped &target,
-    const nav_msgs::msg::Odometry::SharedPtr &odom, double linear_speed) {
+  const nav_msgs::msg::Odometry::ConstSharedPtr &odom,
+  double linear_speed) {
   geometry_msgs::msg::Twist cmd_vel;
 
   // Get robot's current position and orientation

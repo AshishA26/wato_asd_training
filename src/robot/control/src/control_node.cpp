@@ -14,11 +14,12 @@ ControlNode::ControlNode()
 
   // Subscribers and Publishers
   path_sub_ = this->create_subscription<nav_msgs::msg::Path>(
-      path_topic, 10, [this](const nav_msgs::msg::Path::SharedPtr msg) {
+      path_topic, 10, [this](const nav_msgs::msg::Path::ConstSharedPtr msg) {
         current_path_ = msg;
       });
   odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-      odom_topic, 10, [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
+      odom_topic, 10,
+      [this](const nav_msgs::msg::Odometry::ConstSharedPtr msg) {
         robot_odom_ = msg;
       });
   cmd_vel_pub_ =

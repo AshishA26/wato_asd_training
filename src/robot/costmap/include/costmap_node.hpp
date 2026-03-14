@@ -17,7 +17,7 @@ private:
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_pub_;
 
   // Callback function to process laser scan messages and update the costmap
-  void laserCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan);
+  void laserCallback(const sensor_msgs::msg::LaserScan::ConstSharedPtr scan);
 
   // Function to publish the costmap as an OccupancyGrid message
   void publishCostmap();

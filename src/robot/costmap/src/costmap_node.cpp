@@ -31,7 +31,7 @@ CostmapNode::CostmapNode()
 }
 
 void CostmapNode::laserCallback(
-    const sensor_msgs::msg::LaserScan::SharedPtr scan) {
+    const sensor_msgs::msg::LaserScan::ConstSharedPtr scan) {
   // LaserScan message contains:
   // - angle_min, angle_max: start and end angles of the scan
   // - angle_increment: angular resolution

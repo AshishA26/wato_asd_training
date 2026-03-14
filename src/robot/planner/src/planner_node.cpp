@@ -32,7 +32,7 @@ PlannerNode::PlannerNode()
 }
 
 void PlannerNode::mapCallback(
-    const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
+    const nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg) {
   current_map_ = msg;
   if (state_ == State::WAITING_FOR_ROBOT_TO_REACH_GOAL) {
     planPath();
@@ -40,15 +40,17 @@ void PlannerNode::mapCallback(
 }
 
 void PlannerNode::goalCallback(
-    const geometry_msgs::msg::PointStamped::SharedPtr msg) {
+    const geometry_msgs::msg::PointStamped::ConstSharedPtr msg) {
   goal_ = msg;
   goal_received_ = true;
   state_ = State::WAITING_FOR_ROBOT_TO_REACH_GOAL;
   planPath();
 }
 
-void PlannerNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
-  robot_pose_ = std::make_shared<geometry_msgs::msg::Pose>(msg->pose.pose);
+void PlannerNode::odomCallback(
+    const nav_msgs::msg::Odometry::ConstSharedPtr msg) {
+  robot_pose_ = msg->pose.pose;
+  robot_pose_received_ = true;
 }
 
 void PlannerNode::timerCallback() {
@@ -66,20 +68,20 @@ void PlannerNode::timerCallback() {
 
 bool PlannerNode::goalReached() {
   // Cannot determine if goal is reached without goal or robot pose
-  if (!goal_received_ || !robot_pose_) {
+  if (!goal_received_ || !robot_pose_received_) {
     return false;
   }
 
   // Calculate the distance between robots position and the goal
-  double dx = goal_->point.x - robot_pose_->position.x;
-  double dy = goal_->point.y - robot_pose_->position.y;
+  double dx = goal_->point.x - robot_pose_.position.x;
+  double dy = goal_->point.y - robot_pose_.position.y;
   return std::sqrt(dx * dx + dy * dy) <
          goal_tolerance_; // Threshold for reaching the goal
 }
 
 void PlannerNode::planPath() {
   if (!goal_received_ || !current_map_ || current_map_->data.empty() ||
-      !robot_pose_) {
+      !robot_pose_received_) {
     RCLCPP_WARN(this->get_logger(),
                 "Cannot plan path: Missing map, goal, or robot pose!");
     return;
@@ -87,7 +89,7 @@ void PlannerNode::planPath() {
 
   // Initialize start and goal points
   const robot::CellIndex start_point =
-      planner_.convertWorldToGrid(robot_pose_->position, current_map_);
+      planner_.convertWorldToGrid(robot_pose_.position, current_map_);
   const robot::CellIndex goal_point =
       planner_.convertWorldToGrid(goal_->point, current_map_);
 
@@ -100,16 +102,16 @@ void PlannerNode::planPath() {
   }
 
   // Call the planner core to compute the path
-  nav_msgs::msg::Path::SharedPtr path =
+  nav_msgs::msg::Path path =
       planner_.planPath(current_map_, start_point, goal_point, cell_threshold_);
 
-  if (!path || path->poses.empty()) {
+  if (path.poses.empty()) {
     RCLCPP_WARN(this->get_logger(), "Planner failed.");
     return;
   }
 
-  // Copy and set header fields
-  nav_msgs::msg::Path path_to_publish = *path;
+  // Set header fields
+  nav_msgs::msg::Path path_to_publish = path;
   path_to_publish.header.stamp = this->get_clock()->now();
   path_to_publish.header.frame_id = current_map_->header.frame_id;
 

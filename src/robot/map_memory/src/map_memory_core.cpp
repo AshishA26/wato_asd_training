@@ -103,7 +103,8 @@ void MapMemoryCore::integrateCostmap(
   }
 }
 
-nav_msgs::msg::OccupancyGrid::SharedPtr MapMemoryCore::getGlobalMap() const {
+nav_msgs::msg::OccupancyGrid::ConstSharedPtr
+MapMemoryCore::getGlobalMap() const {
   return global_map_;
 }
 
